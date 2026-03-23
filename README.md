@@ -1,84 +1,162 @@
-# ࿋ Sharingan
+# ࿋ Sharingan — AI-Assisted Red Team Framework
 
-**AI-Powered Cybersecurity Red Team Assistant**
+## 📌 Overview
 
----
-
-## Overview
-
-**Sharingan** is an AI-assisted cybersecurity tool that supports **red team operations** by automating repetitive and traditional tasks such as reconnaissance, basic enumeration, and OSINT aggregation.
-
-The project’s primary objective is **learning by practice**: understanding how offensive security workflows are structured, how tools are orchestrated, and how AI can assist analysis and reporting—while keeping the human operator fully in control.
-
-Sharingan follows a **progressive development model**, starting with a basic and transparent version (V1) and evolving toward more advanced capabilities over time.
-
----
-
-## Project Goals
-
-- Automate repetitive red-team tasks  
-- Centralize and normalize tool outputs  
-- Assist analysis and reporting using AI  
-- Improve focus on strategy and decision-making  
-- Learn offensive security methodologies through implementation  
+**Sharingan** is an AI-assisted offensive security framework that automates reconnaissance, analysis, and attack suggestions while complementing manual penetration testing.
 
 > ⚠️ Sharingan is not an autonomous hacking system.  
 > Human validation is required at every stage.
 
 ---
 
-## Current Scope (V1)
+## 🎯 Objectives
 
-### Included
-- Reconnaissance & OSINT aggregation  
-- Basic enumeration workflows  
-- AI-assisted summarization  
-- Automated report generation (Markdown)  
-
-### Not Included
-- Exploitation automation  
-- Payload generation  
-- Privilege escalation logic  
-- Autonomous attack decisions  
+- Automate recon & scanning
+- Provide AI-driven attack suggestions
+- Map findings to standard frameworks
+- Generate structured security reports
 
 ---
 
-## Project Status
+## ⚖️ Toolset Split
 
-🚧 **Active Development — Early Version (V1)**  
-This repository will evolve as new tools, modules, and capabilities are added.
+### ⚙️ Sharingan (Automated)
 
----
+- Nmap, Amass, theHarvester, Shodan
+- ffuf, Wappalyzer, Nikto
+- John the Ripper
+- AI: Ollama (local) / OpenAI (cloud)
 
-## Ethical Use & Disclaimer
-
-Sharingan is intended **only** for:
-- Authorized security testing  
-- Educational and research purposes  
-
-Unauthorized use against systems without explicit permission is strictly prohibited.
+👉 Used for speed, coverage, and pattern detection
 
 ---
 
-## Standards & References
+### 🧠 Manual Tools
+
+- Burp Suite
+- Aircrack-ng
+- Metasploit
+
+👉 Required for:
+
+- Business logic flaws
+- Advanced exploitation
+- Context-based attacks
+
+---
+
+## 🧠 AI Strategy (Hybrid)
+
+- **Local AI** → fast, lightweight analysis
+- **Cloud AI** → complex reasoning & scaling
+
+---
+
+## 📁 Project Structure
+
+```
+ai_red_team_tool/
+│
+├── main.py                  # Entry point
+│
+├── config/
+│   └── settings.yaml        # API keys, tool configs
+│
+├── recon/                   # Reconnaissance modules
+│   ├── nmap_scan.py
+│   ├── amass_enum.py
+│   ├── shodan_lookup.py
+│   └── harvester.py
+│
+├── web/                     # Web scanning modules
+│   ├── ffuf_scan.py
+│   ├── wappalyzer_scan.py
+│   └── nikto_scan.py
+│
+├── cracking/                # Password attacks
+│   └── john_crack.py
+│
+├── wifi/                    # Wireless (manual-assisted)
+│   └── aircrack_module.py
+│
+├── ai/                      # 🧠 Intelligence Layer
+│   ├── local_ai.py          # Local model interface
+│   ├── cloud_ai.py          # API-based AI
+│   └── decision_engine.py   # Attack decision logic
+│
+├── core/                    # ⚙️ Core Components
+│   ├── orchestrator.py      # Controls full workflow
+│   ├── parser.py            # Converts outputs → JSON
+│   └── utils.py             # Shared helpers
+│
+├── reports/                 # 📊 Reporting System
+│   └── report_generator.py  # Builds final reports
+│
+├── data/
+│   ├── raw/                 # Raw tool outputs
+│   └── processed/           # Parsed structured data
+│
+└── knowledge_base/
+    └── vulns.json           # MITRE / attack mappings
+```
+
+---
+
+## 📊 Reporting
+
+Each report includes:
+
+- Vulnerabilities found
+- Mapping to **MITRE ATT&CK**
+- Related exploit methods (e.g. Metasploit)
+- Recommended attacks
+- Remediation steps
+
+---
+
+## 📚 Standards & References
 
 - NIST SP 800-115 – Technical Guide to Information Security Testing  
-  https://csrc.nist.gov/publications/detail/sp/800-115/final  
+  https://csrc.nist.gov/publications/detail/sp/800-115/final
 
 - PTES – Penetration Testing Execution Standard  
-  http://www.pentest-standard.org  
+  http://www.pentest-standard.org
 
 - OWASP Web Security Testing Guide  
-  https://owasp.org/www-project-web-security-testing-guide/  
+  https://owasp.org/www-project-web-security-testing-guide/
 
 - MITRE ATT&CK Framework (classification reference)  
-  https://attack.mitre.org  
+  https://attack.mitre.org
 
 - NIST AI Risk Management Framework  
-  https://www.nist.gov/itl/ai-risk-management-framework  
+  https://www.nist.gov/itl/ai-risk-management-framework
 
 ---
 
-## License
+## 🤝 Acknowledgments
 
-Apache 2.0
+- Open-source security community
+- Contributors to tools like Nmap, Metasploit, and ffuf
+- AI platforms enabling intelligent automation
+
+---
+
+## 📬 Contact
+
+**Maintainer**: Yasseene  
+**GitHub**: [@mUchiha26](https://github.com/mUchiha26)  
+For collaboration or questions, open an issue or contact via GitHub
+
+---
+
+## ⚠️ Disclaimer
+
+For educational and authorized testing only. Unauthorized use is prohibited.
+
+---
+
+## ࿋ Final Note
+
+Sharingan combines:
+
+> 🤖 Automation + 🧠 Human expertise = Effective Red Teaming
