@@ -1,0 +1,75 @@
+sharingan/
+│
+├── 📁 src/
+│   ├── 📁 core/
+│   │   ├── __init__.py
+│   │   ├── orchestrator.py          # State machine workflow engine
+│   │   ├── plugin_manager.py        # Dynamic module loading with sandboxing
+│   │   ├── config_loader.py         # Pydantic-based config validation
+│   │   └── security_context.py      # RBAC, audit logging, secrets handling
+│   │
+│   ├── 📁 modules/                   # Plugin-style security modules
+│   │   ├── 📁 recon/
+│   │   │   ├── base.py              # Abstract base class for all modules
+│   │   │   ├── nmap_wrapper.py
+│   │   │   ├── amass_wrapper.py
+│   │   │   └── ...
+│   │   ├── 📁 web/
+│   │   ├── 📁 auth/
+│   │   └── 📁 post_exploit/
+│   │
+│   ├── 📁 ai/
+│   │   ├── __init__.py
+│   │   ├── base_provider.py         # Abstract AI interface
+│   │   ├── ollama_client.py         # Local model handler
+│   │   ├── openai_client.py         # Cloud model handler
+│   │   ├── prompt_templates/        # Versioned, auditable prompts
+│   │   │   ├── recon_analysis.j2
+│   │   │   ├── attack_suggestion.j2
+│   │   │   └── report_synthesis.j2
+│   │   └── guardrails.py            # Output validation & safety checks
+│   │
+│   ├── 📁 data/
+│   │   ├── models.py                # Pydantic schemas for all data
+│   │   ├── repositories.py          # Abstract data access layer
+│   │   └── serializers.py           # JSON/CSV/PDF output handlers
+│   │
+│   └── 📁 utils/
+│       ├── logging_config.py        # Structured JSON logging
+│       ├── rate_limiter.py          # Prevent tool abuse
+│       ├── subprocess_manager.py    # Safe external tool execution
+│       └── validators.py            # Input sanitization & validation
+│
+├── 📁 config/
+│   ├── base.yaml                    # Default secure settings
+│   ├── development.yaml             # Dev overrides (no prod secrets)
+│   ├── production.yaml.example      # Template for deployment
+│   └── policies/
+│       ├── module_allowlist.json    # Which tools can be executed
+│       ├── ai_usage_policy.json     # AI query limits & content filters
+│       └── engagement_rules.json    # Scope boundaries for engagements
+│
+├── 📁 tests/
+│   ├── 📁 unit/
+│   ├── 📁 integration/
+│   ├── 📁 security/                 # SAST/DAST tests for Sharingan itself
+│   └── conftest.py
+│
+├── 📁 docs/
+│   ├── architecture/
+│   ├── contributing/
+│   ├── security/
+│   └── user-guides/
+│
+├── 📁 scripts/
+│   ├── setup_dev.sh                 # One-time dev environment setup
+│   ├── run_scan.py                  # CLI entry point with argparse
+│   └── audit_export.py              # Compliance report generator
+│
+├── pyproject.toml                   # Modern Python packaging (Poetry)
+├── Dockerfile                       # Multi-stage, non-root container
+├── docker-compose.yml               # Local dev with Redis/Postgres
+├── .github/workflows/               # CI/CD: test, security scan, build
+├── SECURITY.md                      # Responsible disclosure policy
+├── LICENSE                          # Clear usage terms (AGPL recommended)
+└── README.md                        # Updated with MVP status

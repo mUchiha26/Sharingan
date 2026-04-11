@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "sharingan"
+version = "0.1.0"
+description = "AI-Assisted Red Team Framework"
+authors = ["Your Name <you@example.com>"]
+license = "AGPL-3.0-or-later"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^2.7.0"
+pyyaml = "^6.0"
+openai = "^1.30.0"
+python-dotenv = "^1.0.0"
+python-nmap = "^0.7.1"
+structlog = "^24.2.0"
+ollama = "^0.5.1"
+weasyprint = "^66.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-mock = "^3.12.0"
+black = "^24.0.0"
+ruff = "^0.4.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "tests/unit"]
+addopts = "-v --tb=short --disable-plugin-autoload"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

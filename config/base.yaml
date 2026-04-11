@@ -1,0 +1,30 @@
+nmap:
+  authorized_targets:
+    - "127.0.0.1"
+    - "10.0.0.0/24"
+    - "internal.corp.local"
+  allowed_args:
+    - "-sV"
+    - "-sC"
+    - "-p-"
+    - "-T3"
+    - "-T4"
+    - "--open"
+    - "-Pn"
+  disallowed_args:
+    - "--script=vuln"
+    - "-A"
+    - "--script=default"
+  default_args:
+    - "-sV"
+    - "-T3"
+ai:
+  provider: "ollama" # Options: "ollama", "openrouter"
+  base_url: "http://localhost:11434/v1" # Default: Ollama
+  api_key: "" # Set via env var for OpenRouter
+  model: "qwen3.5-9b-unredacted:latest"
+  timeout: 120
+
+tools:
+  nmap: 300
+  aircrack: 60

@@ -1,0 +1,51 @@
+.
+├── config
+│   └── base.yaml
+├── Dockerfile
+├── docs
+│   ├── design
+│   │   └── TECHNICAL_ARCHITECTURE.md
+│   ├── references
+│   │   ├── attack_roadmap_2024_april.pdf
+│   │   └── OWASP_WSTG_Checklist.xlsx
+│   └── srs
+│       └── Sharingan_SRS.pdf
+├── ENGINEERING_LOG.md
+├── LICENSE
+├── poetry.lock
+├── pyproject.toml
+├── README.md
+├── scripts
+│   └── run_scan.py
+├── Sharingan_Version_Roadmap.png
+├── src
+│   ├── ai
+│   │   ├── ai_handler.py
+│   │   ├── base_provider.py
+│   │   ├── __init__.py
+│   │   ├── ollama_client.py
+│   │   └── openrouter_client.py
+│   ├── core
+│   │   └── config_loader.py
+│   ├── main.py
+│   ├── modules
+│   │   ├── base.py
+│   │   ├── recon
+│   │   │   └── nmap_wrapper.py
+│   │   └── wireless
+│   │       ├── aircrack_wrapper.py
+│   │       └── __init__.py
+│   ├── reports
+│   │   └── generator.py
+│   └── utilis
+│       └── subprocess_manager.py
+├── Structure.txt
+├── tests
+│   ├── __init__.py
+│   ├── test_nmap_wrapper.py
+│   └── unit
+│       ├── __init__.py
+│       └── test_aircrack_wrapper.py
+└── tree.txt
+
+16 directories, 32 files
