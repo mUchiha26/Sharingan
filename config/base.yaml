@@ -3,6 +3,7 @@ nmap:
     - "127.0.0.1"
     - "10.0.0.0/24"
     - "internal.corp.local"
+    - "scanme.nmap.org"
   allowed_args:
     - "-sV"
     - "-sC"
@@ -17,6 +18,7 @@ nmap:
     - "--script=default"
   default_args:
     - "-sV"
+    - "-T3"
     - "-T3"
 ai:
   provider: "ollama" # Options: "ollama", "openrouter"

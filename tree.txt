@@ -15,7 +15,12 @@
 ├── poetry.lock
 ├── pyproject.toml
 ├── README.md
+├── reports
+│   ├── report_20260411_154745.json
+│   └── report_20260411_154745.pdf
 ├── scripts
+│   ├── __pycache__
+│   │   └── run_scan.cpython-311.pyc
 │   └── run_scan.py
 ├── Sharingan_Version_Roadmap.png
 ├── src
@@ -24,28 +29,54 @@
 │   │   ├── base_provider.py
 │   │   ├── __init__.py
 │   │   ├── ollama_client.py
-│   │   └── openrouter_client.py
+│   │   ├── openrouter_client.py
+│   │   └── __pycache__
+│   │       ├── base_provider.cpython-311.pyc
+│   │       ├── __init__.cpython-311.pyc
+│   │       ├── ollama_client.cpython-311.pyc
+│   │       └── openrouter_client.cpython-311.pyc
 │   ├── core
-│   │   └── config_loader.py
+│   │   ├── config_loader.py
+│   │   └── __pycache__
+│   │       └── config_loader.cpython-311.pyc
 │   ├── main.py
 │   ├── modules
 │   │   ├── base.py
+│   │   ├── __pycache__
+│   │   │   └── base.cpython-311.pyc
 │   │   ├── recon
-│   │   │   └── nmap_wrapper.py
+│   │   │   ├── nmap_wrapper.py
+│   │   │   └── __pycache__
+│   │   │       └── nmap_wrapper.cpython-311.pyc
 │   │   └── wireless
 │   │       ├── aircrack_wrapper.py
-│   │       └── __init__.py
+│   │       ├── __init__.py
+│   │       └── __pycache__
+│   │           ├── aircrack_wrapper.cpython-311.pyc
+│   │           └── __init__.cpython-311.pyc
+│   ├── __pycache__
+│   │   └── main.cpython-311.pyc
 │   ├── reports
-│   │   └── generator.py
+│   │   ├── generator.py
+│   │   └── __pycache__
+│   │       └── generator.cpython-311.pyc
 │   └── utilis
+│       ├── __pycache__
+│       │   └── subprocess_manager.cpython-311.pyc
 │       └── subprocess_manager.py
 ├── Structure.txt
 ├── tests
 │   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-311.pyc
+│   │   └── test_nmap_wrapper.cpython-311-pytest-9.0.3.pyc
 │   ├── test_nmap_wrapper.py
 │   └── unit
 │       ├── __init__.py
+│       ├── __pycache__
+│       │   ├── __init__.cpython-311.pyc
+│       │   └── test_aircrack_wrapper.cpython-311-pytest-9.0.3.pyc
 │       └── test_aircrack_wrapper.py
 └── tree.txt
 
-16 directories, 32 files
+28 directories, 51 files
