@@ -1,0 +1,2 @@
+[console_scripts]
+sharingan = main:main

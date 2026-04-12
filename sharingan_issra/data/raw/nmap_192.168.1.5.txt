@@ -1,0 +1,21 @@
+# Nmap 7.98 scan initiated Sun Apr 12 12:07:56 2026 as: /usr/lib/nmap/nmap --privileged -sV -O --open -oN data/raw/nmap_192.168.1.5.txt 192.168.1.5
+Nmap scan report for 192.168.1.5
+Host is up (0.0010s latency).
+Not shown: 991 filtered tcp ports (no-response), 2 closed tcp ports (reset)
+Some closed ports may be reported as filtered due to --defeat-rst-ratelimit
+PORT     STATE SERVICE     VERSION
+21/tcp   open  ftp         ProFTPD 1.3.5
+22/tcp   open  ssh         OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)
+80/tcp   open  http        Apache httpd 2.4.7
+445/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+631/tcp  open  ipp         CUPS 1.7
+3306/tcp open  mysql       MySQL (unauthorized)
+8080/tcp open  http        Jetty 8.1.7.v20120910
+MAC Address: 08:00:27:9F:EC:33 (Oracle VirtualBox virtual NIC)
+Aggressive OS guesses: Linux 3.2 - 4.14 (98%), Linux 3.8 - 3.16 (98%), Linux 3.10 - 4.11 (94%), Linux 3.13 - 4.4 (94%), Linux 3.13 (94%), OpenWrt Chaos Calmer 15.05 (Linux 3.18) or Designated Driver (Linux 4.1 or 4.4) (94%), Linux 4.10 (94%), Android 5.0 - 6.0.1 (Linux 3.4) (94%), Android 8 - 9 (Linux 3.18 - 4.4) (94%), Linux 3.2 - 3.10 (94%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 1 hop
+Service Info: Hosts: 127.0.0.1, METASPLOITABLE3-UB1404; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sun Apr 12 12:08:11 2026 -- 1 IP address (1 host up) scanned in 15.36 seconds

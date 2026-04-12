@@ -1,0 +1,22 @@
+{
+  "target": "192.168.1.10",
+  "timestamp": "20260404_184848",
+  "rule_based": [
+    {
+      "target": "192.168.1.10",
+      "type": "general",
+      "category": "general",
+      "severity": "low",
+      "mitre": "T1595",
+      "attacks": [
+        "port_scan",
+        "web_fingerprint"
+      ],
+      "tools": [
+        "nmap",
+        "whatweb"
+      ]
+    }
+  ],
+  "ai_analysis": "ERROR: 404 Client Error: Not Found for url: http://localhost:11434/api/generate"
+}

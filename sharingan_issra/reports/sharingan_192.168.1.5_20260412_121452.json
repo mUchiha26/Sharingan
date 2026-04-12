@@ -1,0 +1,120 @@
+{
+  "target": "192.168.1.5",
+  "timestamp": "20260412_121452",
+  "rule_based": [
+    {
+      "target": "445/tcp",
+      "type": "port",
+      "category": "smb",
+      "severity": "critical",
+      "mitre": "T1021",
+      "attacks": [
+        "eternalblue",
+        "pass_the_hash",
+        "null_session"
+      ],
+      "tools": [
+        "metasploit",
+        "crackmapexec"
+      ]
+    },
+    {
+      "target": "3306/tcp",
+      "type": "port",
+      "category": "database",
+      "severity": "critical",
+      "mitre": "T1190",
+      "attacks": [
+        "default_creds",
+        "unauthenticated_access"
+      ],
+      "tools": [
+        "nmap",
+        "metasploit"
+      ]
+    },
+    {
+      "target": "80/tcp",
+      "type": "port",
+      "category": "web_server",
+      "severity": "high",
+      "mitre": "T1190",
+      "attacks": [
+        "directory_fuzzing",
+        "cve_scan",
+        "sqli",
+        "xss"
+      ],
+      "tools": [
+        "nikto",
+        "ffuf",
+        "burpsuite"
+      ]
+    },
+    {
+      "target": "8080/tcp",
+      "type": "port",
+      "category": "web_server",
+      "severity": "high",
+      "mitre": "T1190",
+      "attacks": [
+        "directory_fuzzing",
+        "cve_scan",
+        "sqli",
+        "xss"
+      ],
+      "tools": [
+        "nikto",
+        "ffuf",
+        "burpsuite"
+      ]
+    },
+    {
+      "target": "21/tcp",
+      "type": "port",
+      "category": "file_server",
+      "severity": "medium",
+      "mitre": "T1078",
+      "attacks": [
+        "anonymous_login",
+        "brute_force"
+      ],
+      "tools": [
+        "hydra",
+        "ftp"
+      ]
+    },
+    {
+      "target": "22/tcp",
+      "type": "port",
+      "category": "ssh",
+      "severity": "medium",
+      "mitre": "T1021",
+      "attacks": [
+        "brute_force",
+        "key_theft",
+        "default_creds"
+      ],
+      "tools": [
+        "hydra",
+        "ssh-audit"
+      ]
+    },
+    {
+      "target": "631/tcp",
+      "type": "port",
+      "category": "general",
+      "severity": "low",
+      "mitre": "T1595",
+      "attacks": [
+        "port_scan",
+        "web_fingerprint"
+      ],
+      "tools": [
+        "nmap",
+        "whatweb"
+      ]
+    }
+  ],
+  "ai_analysis": "ERROR: Ollama timed out"
+}

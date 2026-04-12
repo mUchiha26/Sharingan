@@ -1,0 +1,15 @@
+{
+  "mail_server":     {"mitre":"T1566","severity":"high",    "attacks":["email_spoofing","smtp_enum","open_relay_check"],"tools":["smtp-user-enum","swaks"]},
+  "vpn_gateway":     {"mitre":"T1133","severity":"critical","attacks":["vpn_fingerprint","credential_stuffing","cve_lookup"],"tools":["ike-scan","hydra"]},
+  "dev_environment": {"mitre":"T1190","severity":"high",    "attacks":["directory_fuzzing","exposed_git","default_creds"],"tools":["ffuf","gitdumper"]},
+  "admin_panel":     {"mitre":"T1078","severity":"critical","attacks":["brute_force","default_creds","session_hijack"],"tools":["hydra","burpsuite"]},
+  "api_endpoint":    {"mitre":"T1190","severity":"high",    "attacks":["fuzzing","auth_bypass","idor_check"],"tools":["ffuf","postman"]},
+  "file_server":     {"mitre":"T1078","severity":"medium",  "attacks":["anonymous_login","brute_force"],"tools":["hydra","ftp"]},
+  "database":        {"mitre":"T1190","severity":"critical","attacks":["default_creds","unauthenticated_access"],"tools":["nmap","metasploit"]},
+  "web_server":      {"mitre":"T1190","severity":"high",    "attacks":["directory_fuzzing","cve_scan","sqli","xss"],"tools":["nikto","ffuf","burpsuite"]},
+  "ssh":             {"mitre":"T1021","severity":"medium",  "attacks":["brute_force","key_theft","default_creds"],"tools":["hydra","ssh-audit"]},
+  "smb":             {"mitre":"T1021","severity":"critical","attacks":["eternalblue","pass_the_hash","null_session"],"tools":["metasploit","crackmapexec"]},
+  "rdp":             {"mitre":"T1021","severity":"critical","attacks":["brute_force","bluekeep","credential_stuffing"],"tools":["hydra","metasploit"]},
+  "telnet":          {"mitre":"T1021","severity":"critical","attacks":["cleartext_sniff","brute_force"],"tools":["hydra","wireshark"]},
+  "general":         {"mitre":"T1595","severity":"low",     "attacks":["port_scan","web_fingerprint"],"tools":["nmap","whatweb"]}
+}
