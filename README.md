@@ -82,7 +82,7 @@ ai_red_team_tool/
 ├── ai/                      # 🧠 Intelligence Layer
 │   ├── local_ai.py          # Local model interface
 │   ├── cloud_ai.py          # API-based AI
-│   └── decision_engine.py   # Attack decision logic
+│   └── attack_decision_engine.py  # MITRE ATT&CK-based prioritization logic
 │
 ├── core/                    # ⚙️ Core Components
 │   ├── orchestrator.py      # Controls full workflow
@@ -97,7 +97,7 @@ ai_red_team_tool/
 │   └── processed/           # Parsed structured data
 │
 └── knowledge_base/
-    └── vulns.json           # MITRE / attack mappings
+  └── mitre_attack_knowledge_base.json  # MITRE ATT&CK mapping hub
 ```
 
 ---

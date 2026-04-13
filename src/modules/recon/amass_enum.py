@@ -1,9 +1,15 @@
-import subprocess
 import os
+import subprocess
 
-def run_amass(profile: dict, output_dir: str = "data/raw") -> dict:
+from src.core.target_resolver import TargetProfile, build_target_profile
+
+def run_amass(profile: str | TargetProfile, output_dir: str = "data/raw") -> dict:
+    profile = profile if isinstance(profile, TargetProfile) else build_target_profile(profile)
     os.makedirs(output_dir, exist_ok=True)
-    amass_target = profile.get("domain") or profile.get("input")
+    amass_target = profile.domain or profile.reverse_dns_name
+    if not amass_target:
+        return {"target": profile.input, "subdomains": [], "count": 0}
+
     output_file = os.path.join(output_dir, f"amass_{amass_target}.txt")
     cmd = ["amass", "enum", "-passive", "-d", amass_target, "-o", output_file, "-timeout", "3"]
     print(f"[*] Amass scanning: {amass_target}")

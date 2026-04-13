@@ -7,9 +7,15 @@ Nmap Wrapper Module - MVP v0.2
 """
 # pyright: reportMissingModuleSource=false
 import logging
-import ipaddress
 from typing import Optional
 from pydantic import BaseModel, Field
+
+from src.core.target_resolver import (
+    TargetProfile,
+    build_target_profile,
+    is_target_in_scope,
+    select_tool_target,
+)
 
 try:
     import nmap
@@ -56,21 +62,9 @@ class NmapWrapper:
             details = " ".join(f"{k}={v}" for k, v in fields.items())
             log_fn(f"{event} {details}".strip())
         
-    def _validate_target(self, target: str) -> bool:
-        """Production-grade scope validation: exact hostnames/IPs or CIDR ranges."""
-        for allowed in self.authorized_targets:
-            # 1. Exact match
-            if target == allowed:
-                return True
-            # 2. CIDR/IP range match
-            try:
-                target_ip = ipaddress.ip_address(target)
-                allowed_net = ipaddress.ip_network(allowed, strict=False)
-                if target_ip in allowed_net:
-                    return True
-            except ValueError:
-                continue  # Not an IP, skip CIDR check
-        return False
+    def _validate_target(self, target: str | TargetProfile) -> bool:
+        """Production-grade scope validation shared with other modules."""
+        return is_target_in_scope(target, self.authorized_targets)
     
     def _sanitize_args(self, args: list[str]) -> list[str]:
         """Filter arguments against allowlist/disallowlist from config"""
@@ -85,26 +79,29 @@ class NmapWrapper:
                 self._audit("warning", "unknown_arg", arg=arg, reason="not_in_allowlist")
         return sanitized
     
-    def scan(self, target: str, args: Optional[list[str]] = None) -> NmapResult:
+    def scan(self, target: str | TargetProfile, args: Optional[list[str]] = None, prefer_ip: bool = False) -> NmapResult:
         """Execute nmap with safety gates"""
+        profile = target if isinstance(target, TargetProfile) else build_target_profile(target)
+
         # 1. Scope validation (CRITICAL)
-        if not self._validate_target(target):
-            self._audit("error", "scope_violation", target=target, action="scan_blocked")
-            raise ValueError(f"Target {target} not in authorized scope")
+        if not self._validate_target(profile):
+            self._audit("error", "scope_violation", target=profile.input, action="scan_blocked")
+            raise ValueError(f"Target {profile.input} not in authorized scope")
         
         # 2. Argument sanitization
         safe_args = self._sanitize_args(args or self.default_args)
         arg_str = " ".join(safe_args)
+        scan_target = select_tool_target(profile, prefer_ip=prefer_ip)
         
-        self._audit("info", "scan_start", target=target, args=arg_str)
+        self._audit("info", "scan_start", target=scan_target, args=arg_str)
         
         try:
             # 3. Execute scan
-            self.nm.scan(hosts=target, arguments=arg_str)
+            self.nm.scan(hosts=scan_target, arguments=arg_str)
             
             # 4. Parse results
             result = NmapResult(
-                target=target,
+                target=scan_target,
                 scan_args=arg_str,
                 hosts_up=len(self.nm.all_hosts()),
                 open_ports=[]
@@ -118,21 +115,21 @@ class NmapWrapper:
                                 result.open_ports.append({
                                     "port": port,
                                     "protocol": proto,
-                                    "service": info.get("product", ""),
+                                    "service": info.get("name") or info.get("product", ""),
                                     "version": info.get("version", "")
                                 })
             
             self._audit(
                 "info",
                 "scan_complete",
-                target=target,
+                target=scan_target,
                 hosts_up=result.hosts_up,
                 open_ports=len(result.open_ports),
             )
             return result
             
         except Exception as e:
-            self._audit("error", "scan_error", target=target, error=str(e))
+            self._audit("error", "scan_error", target=scan_target, input=profile.input, error=str(e))
             raise
 
 # Quick local test (use poetry run to avoid ModuleNotFoundError)

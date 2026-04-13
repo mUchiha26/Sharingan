@@ -3,6 +3,8 @@ import argparse
 import logging
 import os
 from src.core.config_loader import load_config
+from src.core.parser import enrich_with_kb, parse_nmap
+from src.core.target_resolver import build_target_profile
 from src.ai import get_ai_provider
 from src.modules.recon.nmap_wrapper import NmapWrapper
 from src.modules.wireless.aircrack_wrapper import AircrackWrapper
@@ -30,19 +32,23 @@ def main():
             logger.error("--target is required for nmap scans")
             return
 
+        profile = build_target_profile(args.target)
         nm = NmapWrapper(config=cfg.nmap.model_dump(), audit_logger=logger)
         try:
-            result = nm.scan(target=args.target)
+            result = nm.scan(target=profile)
         except Exception as exc:
             logger.error(f"❌ Nmap scan failed: {exc}")
             return
 
+        parsed_findings = parse_nmap(result)
+        enriched_findings = enrich_with_kb(parsed_findings)
         logger.info(f"📊 Nmap hosts up: {result.hosts_up} | open ports: {len(result.open_ports)}")
         prompt = (
             "Analyze this nmap output and suggest safe, defensive next steps only:\n"
             f"target={result.target}\n"
             f"args={result.scan_args}\n"
-            f"open_ports={result.open_ports}"
+            f"open_ports={result.open_ports}\n"
+            f"parsed_findings={enriched_findings}"
         )
         analysis = ai.generate(
             system_prompt="You are a network security analyst. Provide concise defensive recommendations.",

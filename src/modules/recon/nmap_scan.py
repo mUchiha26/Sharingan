@@ -2,9 +2,15 @@ import subprocess
 import os
 import re
 
-def run_nmap(profile: dict, output_dir: str = "data/raw") -> dict:
+from src.core.target_resolver import TargetProfile, build_target_profile, select_tool_target
+
+def run_nmap(profile: str | TargetProfile, output_dir: str = "data/raw", prefer_ip: bool = True) -> dict:
+    profile = profile if isinstance(profile, TargetProfile) else build_target_profile(profile)
     os.makedirs(output_dir, exist_ok=True)
-    target = profile.get("ip") or profile.get("input")
+    target = select_tool_target(profile, prefer_ip=prefer_ip)
+    if target is None:
+        return {"target": profile.input, "raw": "", "ports": []}
+
     output_file = os.path.join(output_dir, f"nmap_{target}.txt")
     cmd = ["nmap", "-sV", "-O", "--open", target, "-oN", output_file]
     print(f"[*] Nmap scanning: {target}")

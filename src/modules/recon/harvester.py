@@ -1,14 +1,20 @@
-import subprocess
 import os
 import json
+import subprocess
 
-def run_harvester(profile: dict, output_dir: str = "data/raw") -> dict:
+from src.core.target_resolver import TargetProfile, build_target_profile
+
+def run_harvester(profile: str | TargetProfile, output_dir: str = "data/raw") -> dict:
+    profile = profile if isinstance(profile, TargetProfile) else build_target_profile(profile)
     os.makedirs(output_dir, exist_ok=True)
 
     # theHarvester works best with domains
     # For IPs, use reverse DNS result if available, else skip gracefully
-    target = profile.get("domain") or profile.get("input")
-    target_type = profile.get("type")
+    target = profile.domain or profile.reverse_dns_name
+    target_type = profile.type
+
+    if not target:
+        return {"target": profile.input, "emails": [], "hosts": [], "ips": [], "urls": []}
 
     output_file = os.path.join(output_dir, f"harvester_{target}")
 
@@ -22,7 +28,7 @@ def run_harvester(profile: dict, output_dir: str = "data/raw") -> dict:
 
     print(f"[*] theHarvester scanning: {target}")
 
-    if target_type == "ip" and not profile.get("domain"):
+    if target_type == "ip" and not target:
         print("[*] theHarvester: IP with no reverse DNS — skipping gracefully")
         return {"target": target, "emails": [], "hosts": [], "ips": [], "urls": []}
 

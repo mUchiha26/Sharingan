@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: sharingan
-Version: 1.0.0
-Author: mUchiha26
-Requires-Python: >=3.10
-Requires-Dist: requests
-Dynamic: author
-Dynamic: requires-dist
-Dynamic: requires-python

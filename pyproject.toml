@@ -2,7 +2,7 @@
 name = "sharingan"
 version = "0.1.0"
 description = "AI-Assisted Red Team Framework"
-authors = ["Your Name <you@example.com>"]
+authors = ["Issra", "Rayen", "Yasseene <RAHAL.Mohamed-Yassine@tek-up.de>"]
 license = "AGPL-3.0-or-later"
 
 [tool.poetry.dependencies]
@@ -15,6 +15,10 @@ python-nmap = "^0.7.1"
 structlog = "^24.2.0"
 ollama = "^0.5.1"
 weasyprint = "^66.0"
+rich = "^13.7.0"          # Beautiful terminal formatting
+alive-progress = "^3.1.5" # Animated progress bars [[1]][[2]]
+yaspin = "^2.3.0"         # Lightweight spinners [[23]]
+pyfiglet = "^1.0.2"       # ASCII art banners
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

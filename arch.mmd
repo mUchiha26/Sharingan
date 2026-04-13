@@ -1,0 +1,46 @@
+graph TB
+    subgraph "Entry Layer"
+        CLI[src/main.py] --> CFG[config_loader.py]
+    end
+    
+    subgraph "Core Engine"
+        CFG --> ORCH[orchestrator.py]
+        ORCH --> PLUG[plugin_manager.py]
+        PLUG --> SEC[security_context.py]
+    end
+    
+    subgraph "AI Intelligence Layer"
+        ORCH --> AI[base_provider.py]
+        AI --> OLL[ollama_client.py]
+        AI --> OPR[openrouter_client.py]
+        AI --> MITRE[mitre_mapper.py]
+        AI --> GRD[guardrails.py]
+    end
+    
+    subgraph "Tool Modules"
+        ORCH --> NMAP[modules/recon/nmap_wrapper.py]
+        ORCH --> AMASS[modules/recon/amass_wrapper.py]
+        ORCH --> HARV[modules/recon/harvester_wrapper.py]
+    end
+    
+    subgraph "Data Flow"
+        NMAP --> PARSER[core/parser.py]
+        NMAP --> PARSER
+        AMASS --> PARSER
+        HARV --> PARSER
+        PARSER --> JSON["JSON Report\n(AI INPUT)"]
+        JSON --> AI[base_provider.py]
+        AI --> PDF["PDF Report\n(FINAL OUTPUT)"]
+    end
+    
+    subgraph "Output"
+        ORCH --> RPT[reports/generator.py]
+        RPT --> JSON_OUT[Machine JSON]
+        RPT --> PDF_OUT[Human PDF]
+    end
+    
+    style CLI fill:#4CAF50,color:white
+    style AI fill:#9C27B0,color:white
+    style JSON fill:#2196F3,color:white
+    style PDF fill:#FF9800,color:white
+    style NMAP fill:#607D8B,color:white
