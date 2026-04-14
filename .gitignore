@@ -5,4 +5,7 @@ __pycache__/
 *.pyo
 *.pyd
 reports/
-
+data/
+logs/
+docs/testing_guide.md
+.env

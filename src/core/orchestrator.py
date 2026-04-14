@@ -1,10 +1,5 @@
 """Coordinate end-to-end recon execution, analysis, and report generation."""
 
-"""
-Full recon orchestration workflow: target resolution → multi-tool discovery → parsing → analysis → reporting.
-This consolidates the legacy sharingan_issra orchestrator for the modern src structure.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -24,7 +19,7 @@ from src.core.parser import (
 from src.core.target_resolver import TargetProfile, build_target_profile
 from src.modules.recon.amass_enum import run_amass
 from src.modules.recon.harvester import run_harvester
-from src.modules.recon.nmap_scan import run_nmap
+from src.modules.recon.nmap_wrapper import run_nmap
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +49,7 @@ def run_full_recon(
     profile = target if isinstance(target, TargetProfile) else build_target_profile(target)
     target_label = profile.input
 
-    logger.info("orchestrator_start", target=target_label, type=profile.type)
+    logger.info("orchestrator_start target=%s type=%s", target_label, profile.type)
 
     # 1. Run all tools
     amass_result = run_amass(profile)
@@ -67,10 +62,10 @@ def run_full_recon(
     parsed_harvester = parse_harvester(harvester_result)
 
     logger.info(
-        "recon_complete",
-        subdomains=len(parsed_amass),
-        ports=len(parsed_nmap),
-        harvester_items=len(parsed_harvester),
+        "recon_complete subdomains=%s ports=%s harvester_items=%s",
+        len(parsed_amass),
+        len(parsed_nmap),
+        len(parsed_harvester),
     )
 
     # 3. Merge + deduplicate findings
@@ -81,7 +76,7 @@ def run_full_recon(
         target_label=target_label
     )
 
-    logger.info("findings_deduplicated", total=len(unique_findings))
+    logger.info("findings_deduplicated total=%s", len(unique_findings))
 
     # 4. Enrich with MITRE ATT&CK KB
     enriched_findings = enrich_with_kb(unique_findings)
@@ -90,7 +85,7 @@ def run_full_recon(
     if save_findings:
         filename = f"{target_label.replace('/', '_')}_findings.json"
         saved_path = save_parsed(enriched_findings, filename, output_dir)
-        logger.info("findings_saved", path=saved_path)
+        logger.info("findings_saved path=%s", saved_path)
 
     return {
         "all_findings": enriched_findings,
@@ -102,6 +97,7 @@ def run_full_recon(
 def analyze_and_summarize(
     findings: list[dict],
     model_name: Optional[str] = None,
+    ai_analysis: str | None = None,
 ) -> dict:
     """Apply decision engine analysis and generate summary.
 
@@ -114,7 +110,7 @@ def analyze_and_summarize(
             - analysis: result from attack_decision_engine.analyze()
             - summary: text summary from attack_decision_engine.summarize()
     """
-    analysis = analyze_findings(findings)
+    analysis = analyze_findings(findings, ai_analysis=ai_analysis)
     summary = summarize_findings(analysis, model_name=model_name)
-    logger.info("analysis_complete", findings_count=len(findings))
+    logger.info("analysis_complete findings_count=%s", len(findings))
     return {"analysis": analysis, "summary": summary}

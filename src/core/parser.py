@@ -159,7 +159,7 @@ def merge_and_deduplicate_findings(
             }
         ]
     
-    return unique_findings
+    return unique_findings  # Always return deduplicated list
 
 
 def to_report_findings(enriched_findings: list[dict[str, Any]]) -> list[dict[str, Any]]:

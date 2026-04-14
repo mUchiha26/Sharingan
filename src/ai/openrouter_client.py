@@ -5,7 +5,7 @@ from openai import OpenAI
 from src.ai.base_provider import BaseAIProvider
 
 
-class OpenAIClient(BaseAIProvider):
+class OpenRouterClient(BaseAIProvider):
     def __init__(self, api_key: str, model: str, timeout: int, base_url: str = "https://api.openai.com/v1"):
         self.client = OpenAI(base_url=base_url, api_key=api_key, timeout=timeout)
         self.model = model

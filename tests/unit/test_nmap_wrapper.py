@@ -54,8 +54,13 @@ class TestArgSanitization:
         assert "-A" not in sanitized
 
 class TestScanFlow:
-    def test_scan_success(self, wrapper, sample_config):
-        # Mock nmap response
+    def test_scan_success(self, wrapper, sample_config, monkeypatch):
+        # Mock nmap response and reverse DNS (which returns None typically)
+        monkeypatch.setattr(
+            "src.modules.recon.nmap_wrapper.select_tool_target",
+            lambda t, **kw: "127.0.0.1"
+        )
+        
         mock_nm = MagicMock()
         mock_nm.all_hosts.return_value = ["127.0.0.1"]
         mock_nm.__getitem__.return_value.state.return_value = "up"

@@ -1,0 +1,70 @@
+flowchart TD
+  %% ──────────────────────────────────────────────────────────────
+  %% NODE DEFINITIONS
+  %% ──────────────────────────────────────────────────────────────
+  S1["1️⃣ Initialization & Config Loading\n📁 src/main.py, src/core/config_loader.py"]
+  C1[("📦 .env + config/base.yaml")]
+  
+  S2["2️⃣ Dependency & Scope Validation\n📁 src/main.py, src/utils/dependency_check.py"]
+  
+  S3["3️⃣ Target Resolution & Workspace Setup\n📁 src/main.py, src/core/target_resolver.py"]
+  W1[("📂 Workspace: data/raw, data/processed, reports")]
+  
+  S4["4️⃣ Reconnaissance Execution\n📁 src/core/orchestrator.py, src/modules/recon/*.py, src/utils/subprocess_manager.py"]
+  R1[("📄 Raw Outputs: data/raw/")]
+  
+  S5["5️⃣ Data Parsing & Normalization\n📁 src/core/parser.py"]
+  P1[("📦 Processed Findings: data/processed/")]
+  
+  S6["6️⃣ AI Analysis & Attack Path Generation"]
+  PT["📝 Prompt Templates: src/ai/prompt_templates/"]
+  BP["🔗 AI Interface: src/ai/base_provider.py"]
+  AI{🤖 Provider Router}
+  OC["🦙 OllamaClient: src/ai/ollama_client.py"]
+  OR["🌐 OpenRouterClient: src/ai/openrouter_client.py"]
+  ADE["🛡️ Decision Engine: src/core/attack_decision_engine.py"]
+  
+  S7["7️⃣ Report Generation\n📁 src/reports/generator.py"]
+  REP[("📊 Final Reports: reports/")]
+  
+  S8["8️⃣ Auditing & Clean Exit (Optional)\n📁 src/main.py, src/core/logger.py"]
+  AUD[("📜 Audit Trail: data/audit/audit.jsonl")]
+
+  %% ──────────────────────────────────────────────────────────────
+  %% FLOW CONNECTIONS
+  %% ──────────────────────────────────────────────────────────────
+  C1 -->|Load & Merge| S1
+  S1 --> S2
+  S2 -->|Scope Gate| S3
+  S3 -->|Init Dirs| W1
+  W1 --> S4
+  S4 -->|Save Raw| R1
+  R1 --> S5
+  S5 -->|Save Unified| P1
+  P1 --> S6
+  S6 -->|Load System Prompt| PT
+  PT -->|Standardize Interface| BP
+  BP -->|Route| AI
+  AI -->|Local| OC
+  AI -->|Cloud| OR
+  OC --> ADE
+  OR --> ADE
+  ADE --> S7
+  S7 -->|Export| REP
+  S7 -->|Log Events| S8
+  S8 --> AUD
+
+  %% ──────────────────────────────────────────────────────────────
+  %% STYLING
+  %% ──────────────────────────────────────────────────────────────
+  classDef step fill:#ffffff,stroke:#1f2937,stroke-width:2px,color:#111827,font-weight:600
+  classDef data fill:#f3f4f6,stroke:#6b7280,stroke-dasharray: 5 5
+  classDef core fill:#dbeafe,stroke:#2563eb
+  classDef ai fill:#ede9fe,stroke:#7c3aed
+  classDef audit fill:#fee2e2,stroke:#dc2626,stroke-dasharray: 5 5
+
+  class S1,S2,S3,S4,S5,S6,S7,S8 step
+  class C1,W1,R1,P1,REP,AUD data
+  class S1,S2,S3,S4,S5,S7,S8,BP,ADE,PT core
+  class S6,AI,OC,OR ai
+  class S8,AUD audit

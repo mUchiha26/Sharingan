@@ -1,7 +1,7 @@
 """Wrap aircrack-ng workflow commands for wireless assessment tasks."""
 
 from src.modules.base import BaseModule
-from src.utilis.subprocess_manager import SubprocessManager
+from src.utils.subprocess_manager import SubprocessManager
 import logging
 
 logger = logging.getLogger(__name__)

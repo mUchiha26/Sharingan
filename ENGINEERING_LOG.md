@@ -1,8 +1,29 @@
 # ENGINEERING_LOG.md
 
+## [2026-04-14] Code Quality Cleanup & Fixes
+
+**Objective**: Fix 47 code quality issues in a clean way that supports future improvements.
+
+**Changes**: 8 files modified, critical imports fixed, silent failures eliminated, type hints added.
+
+- ✅ Removed bare `except Exception: pass` handlers (3 occurrences)
+- ✅ Replaced print() statements with logger calls (6 occurrences)
+- ✅ Fixed missing imports: `os` in dependency_check.py
+- ✅ Fixed **all** exports in **init**.py
+- ✅ Fixed structlog import checking with TYPE_CHECKING guard
+- ✅ Added return type hints to \_build_ai_provider()
+- ✅ Added validation for AI provider configuration
+- ✅ Improved error messages and logging format
+
+**Result**: All code now compiles without errors, audit trails complete, backward compatible.
+
+See [FIX_SUMMARY.md](./FIX_SUMMARY.md) and [CHANGELOG_FIXES_2026_04_14.md](./CHANGELOG_FIXES_2026_04_14.md) for details.
+
+---
+
 ## Sharingan Core Design Principles
 
-_Last Updated: $(date)_
+_Last Updated: 2026-04-11_
 
 ### 🔐 Security-First Principles
 
@@ -164,3 +185,22 @@ Dockerfile → Where & how it runs (OS, system tools, runtime)
 - `python -m src.main` completes and generates report artifacts.
 
 **Lesson**: Reliability comes from eliminating hidden assumptions at boundaries (imports, config shape, logger API, and optional system dependencies), not only from passing unit tests.
+
+Aspect
+.env
+config/base.yaml
+Purpose
+🔑 Secrets & runtime overrides
+⚙️ Framework defaults & structure
+Security
+🔒 Never committed to Git
+✅ Safe to commit (zero secrets)
+Content
+API keys, log levels, target scopes, feature toggles
+Tool arguments, AI models, report formats, validation rules
+Scope
+Machine/user/deployment-specific
+Application-wide & version-controlled
+Load Order
+Loaded first → populates os.environ
+Read second → ${VAR:-fallback} pulls from .env

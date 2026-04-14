@@ -1,32 +1,129 @@
-nmap:
-  authorized_targets:
-    - "127.0.0.1"
-    - "10.0.0.0/24"
-    - "internal.corp.local"
-    - "scanme.nmap.org"
-  allowed_args:
-    - "-sV"
-    - "-sC"
-    - "-p-"
-    - "-T3"
-    - "-T4"
-    - "--open"
-    - "-Pn"
-  disallowed_args:
-    - "--script=vuln"
-    - "-A"
-    - "--script=default"
-  default_args:
-    - "-sV"
-    - "-T3"
-    - "-T3"
-ai:
-  provider: "ollama" # Options: "ollama", "openrouter"
-  base_url: "http://localhost:11434/v1" # Default: Ollama
-  api_key: "" # Set via env var for OpenRouter
-  model: "qwen3.5-9b-unredacted:latest"
-  timeout: 120
+# Sharingan Base Configuration
+# Values can be overridden by environment variables or environment-specific configs
+# See .env.example for available environment variables
 
+# =============================================================================
+# CORE SETTINGS
+# =============================================================================
+core:
+  name: "Sharingan"
+  version: "2.0.0-merged"
+  authorized_targets: "${AUTHORIZED_TARGETS:-127.0.0.1,localhost}" # Env var with fallback
+  log_level: "${SHARINGAN_LOG_LEVEL:-INFO}"
+  audit_log: "${SHARINGAN_AUDIT_LOG:-data/audit/audit.jsonl}"
+
+# =============================================================================
+# AI CONFIGURATION
+# =============================================================================
+ai:
+  # Provider selection: "ollama" or "openrouter"
+  provider: "${AI_PROVIDER:-ollama}"
+
+  # Local AI (Ollama)
+  ollama:
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434/v1}"
+    model: "${OLLAMA_MODEL:-qwen2.5:7b}"
+    timeout: "${AI_TIMEOUT:-120}"
+
+  # Cloud AI (OpenRouter)
+  openrouter:
+    # ⚠️ API key MUST come from environment variable, NEVER from YAML
+    api_key: "${OPENROUTER_API_KEY}" # Will be empty string if not set
+    base_url: "https://openrouter.ai/api/v1"
+    model: "${OPENROUTER_MODEL:-meta-llama/llama-3.1-70b-instruct}"
+    timeout: "${AI_TIMEOUT:-120}"
+
+  # Shared AI settings
+  max_tokens: "${AI_MAX_TOKENS:-2048}"
+  temperature: "${AI_TEMPERATURE:-0.2}"
+  enable: "${SHARINGAN_ENABLE_AI:-0}" # 0 or 1
+
+# =============================================================================
+# TOOL CONFIGURATIONS
+# =============================================================================
 tools:
-  nmap: 300
-  aircrack: 60
+  nmap:
+    binary: "nmap" # Assumed in PATH; override if needed
+    timeout: "${NMAP_TIMEOUT:-300}"
+    rate: "${NMAP_RATE:-1000}"
+    # Whitelist of allowed arguments (security)
+    allowed_args:
+      - "-sV" # Version detection
+      - "-sC" # Default scripts
+      - "-T3" # Timing template
+      - "-p-" # All ports
+      - "-p" # Specific ports
+      - "--script" # NSE scripts (validate separately)
+    # Blocked dangerous arguments
+    disallowed_args:
+      - "--script=vuln" # Aggressive vuln scanning
+      - "--script=exploit" # Exploit scripts
+      - "-A" # Aggressive scan (OS detection + version + scripts)
+
+  amass:
+    binary: "amass"
+    timeout: "${AMASS_TIMEOUT:-600}"
+    max_depth: "${AMASS_MAX_DEPTH:-3}"
+    allowed_args:
+      - "enum"
+      - "-passive"
+      - "-d"
+      - "-src"
+
+  harvester:
+    binary: "theHarvester"
+    allowed_args:
+      - "-b" # Data source
+      - "-l" # Result limit
+
+  aircrack:
+    binary: "aircrack-ng"
+    # Wireless tools require elevated privileges - document this
+    requires_root: true
+
+# =============================================================================
+# REPORTING
+# =============================================================================
+reports:
+  output_dir: "${REPORT_OUTPUT_DIR:-reports}"
+  formats:
+    - "${REPORT_FORMAT:-pdf}" # Primary format
+    - "json" # Always include machine-readable JSON
+  include:
+    - "findings"
+    - "mitre_mapping"
+    - "remediation"
+    - "raw_data_summary" # Optional: include sanitized raw output
+  pdf:
+    # WeasyPrint settings
+    page_size: "A4"
+    margin: "2cm"
+    # Fallback if PDF generation fails
+    fallback_to_html: true
+
+# =============================================================================
+# DATA MANAGEMENT
+# =============================================================================
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  cache_enabled: true
+  cache_ttl_hours: 24 # Cache recon results for 24h
+
+# =============================================================================
+# SECURITY GUARDRAILS
+# =============================================================================
+security:
+  # Validate all targets against authorized_targets before ANY action
+  enforce_scope: "${DEV_SKIP_SCOPE_CHECK:-0}" # 1 disables enforcement, 0 keeps it enabled
+
+  # Redact secrets in logs and reports
+  redact_secrets: true
+
+  # Rate limiting for external API calls (prevent abuse)
+  rate_limit:
+    openrouter: "10/minute"
+    shodan: "1/second" # Free tier limit
+
+  # Fail closed: if config validation fails, exit safely
+  fail_closed: true

@@ -134,6 +134,69 @@ class NmapWrapper:
             self._audit("error", "scan_error", target=scan_target, input=profile.input, error=str(e))
             raise
 
+
+def run_nmap(target: str | TargetProfile, config: dict | None = None, output_dir: str = "data/raw") -> dict:
+    """Execute nmap scan with configuration-driven settings.
+    
+    Convenience wrapper around NmapWrapper for use in orchestration pipelines.
+    
+    Args:
+        target: Target IP, domain, or CIDR to scan.
+        config: Nmap configuration dict (loads from nmap section if None).
+        output_dir: Directory to store nmap output files.
+        
+    Returns:
+        Dict with scan results:
+            - target: scanned target
+            - hosts_up: number of live hosts
+            - open_ports: list of dicts with {port, protocol, service, version}
+            - scan_args: arguments used for the scan
+    """
+    from src.core.config_loader import load_config
+    from src.core.logger import get_logger
+    
+    logger = get_logger(__name__)
+    profile = target if isinstance(target, TargetProfile) else build_target_profile(target)
+    
+    try:
+        # Load config if not provided
+        if config is None:
+            cfg = load_config()
+            config = cfg.nmap.model_dump()
+        
+        # Create wrapper with config
+        wrapper = NmapWrapper(config=config, audit_logger=logger)
+        
+        # Execute scan
+        result = wrapper.scan(profile)
+        
+        logger.info("nmap_complete", extra={
+            "target": str(result.target),
+            "hosts_up": result.hosts_up,
+            "open_ports": len(result.open_ports)
+        })
+        
+        # Return in compatible format
+        return {
+            "target": str(result.target),
+            "hosts_up": result.hosts_up,
+            "open_ports": result.open_ports,
+            "scan_args": result.scan_args
+        }
+        
+    except ValueError as e:
+        # Scope error
+        logger.error("nmap_scope_error", extra={"target": str(profile.input), "error": str(e)})
+        return {"target": str(profile.input), "hosts_up": 0, "open_ports": [], "scan_args": ""}
+    except Exception as e:
+        logger.error("nmap_error", extra={
+            "target": str(profile.input),
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        return {"target": str(profile.input), "hosts_up": 0, "open_ports": [], "scan_args": ""}
+
+
 # Quick local test (use poetry run to avoid ModuleNotFoundError)
 if __name__ == "__main__":
     import structlog

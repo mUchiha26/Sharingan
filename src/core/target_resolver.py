@@ -77,13 +77,22 @@ def _is_valid_hostname(target: str) -> bool:
 
 
 def validate_target(target: str) -> bool:
+    """Validate an IP address, hostname, or localhost target."""
     if not target or len(target) < 3 or " " in target:
         return False
+    
+    # Try IP first
     try:
         ipaddress.ip_address(target)
         return True
     except ValueError:
-        return _is_valid_hostname(target)
+        pass  # Not an IP, try hostname
+    
+    # If it looks like an IPv4 attempt (all dots and digits), reject
+    if all(c.isdigit() or c == '.' for c in target):
+        return False
+    
+    return _is_valid_hostname(target)
 
 
 def resolve_addresses(hostname: str) -> list[str]:
@@ -98,11 +107,14 @@ def resolve_addresses(hostname: str) -> list[str]:
     return addresses
 
 
-def build_target_profile(target: str) -> TargetProfile:
-    """Build and validate target profile against authorized scope from config.
+def build_target_profile(
+    target: str,
+    authorized_targets: Iterable[str] | None = None,
+    enforce_scope: bool = False,
+) -> TargetProfile:
+    """Build a normalized target profile.
     
-    Raises:
-        ValueError: If target is invalid or out of authorized scope.
+    When authorized_targets are provided and enforce_scope is True, scope is checked.
     """
     if not validate_target(target):
         raise ValueError(f"Invalid target: '{target}'")
@@ -126,26 +138,14 @@ def build_target_profile(target: str) -> TargetProfile:
         else:
             profile.resolution_errors.append(f"No A/AAAA records resolved for {target}")
 
-    # Validate scope against authorized targets from config
-    try:
-        from src.core.config_loader import load_config
-        cfg = load_config()
-        authorized_targets = cfg.nmap.authorized_targets
-        
-        if authorized_targets and not is_target_in_scope(profile, authorized_targets):
+    if enforce_scope and authorized_targets:
+        if not is_target_in_scope(profile, authorized_targets):
             logger.error(
                 "Scope violation: target=%s type=%s action=profile_rejected",
                 profile.input,
                 profile.type
             )
             raise ValueError(f"Target {profile.input} not in authorized scope")
-        
-        logger.debug("Target scope validated: %s", profile.input)
-    except ValueError:
-        # Re-raise scope violation
-        raise
-    except Exception as e:
-        logger.warning("Scope validation skipped: %s", e)
 
     return profile
 

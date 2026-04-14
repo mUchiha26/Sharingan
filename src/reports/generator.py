@@ -5,6 +5,7 @@
 Report Generator: JSON (machine-readable) + PDF (human-readable)
 Uses WeasyPrint for HTML→PDF conversion [[17]]
 """
+from enum import Enum
 import json
 import logging
 from pathlib import Path
@@ -16,6 +17,13 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     HTML = None
     CSS = None
+
+
+class ReportFormat(str, Enum):
+    """Supported report output formats."""
+
+    JSON = "json"
+    PDF = "pdf"
 
 class ReportData(BaseModel):
     """Structured report content"""
@@ -136,7 +144,14 @@ class ReportGenerator:
         return path
     
     def generate_full_report(self, data: ReportData) -> tuple[Path, Path]:
-        """Generate both JSON and PDF reports"""
+        """Generate both JSON and PDF reports.
+        
+        Args:
+            data: ReportData instance with findings and recommendations.
+            
+        Returns:
+            Tuple of (json_report_path, pdf_report_path).
+        """
         json_path = self.save_json(data)
         pdf_path = self.save_pdf(data)
         self.logger.info("reports_generated", extra={"json": str(json_path), "pdf": str(pdf_path)})

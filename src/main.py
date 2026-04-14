@@ -1,189 +1,295 @@
-"""Start Sharingan in interactive mode or config-driven execution mode."""
-
+#!/usr/bin/env python3
 """
-Primary entrypoint for Sharingan: supports both direct config-driven scans and interactive CLI mode.
-Can run orchestrated recon (all tools) or focused nmap scans.
+Sharingan - AI-Assisted Red Team Framework
+Main CLI entry point for orchestration, validation, and execution.
 """
-
-from __future__ import annotations
-
-import logging
+import argparse
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, List, Optional
 
-from src.ai import build_recon_analysis_prompt, get_ai_provider
-from src.cli import print_banner, print_profile_summary, print_recon_header, print_step, prompt_target, prompt_workflow
-from src.core.config_loader import load_config
+# Core framework imports
+from src.ai import OllamaClient, OpenRouterClient
+from src.ai.prompt_templates import build_recon_analysis_prompt
+from src.cli import print_banner
+from src.core.config_loader import get_authorized_targets, is_target_authorized, load_config
+from src.core.logger import audit_log, get_logger, setup_logging
 from src.core.orchestrator import analyze_and_summarize, run_full_recon
-from src.core.parser import enrich_with_kb, parse_nmap, to_report_findings
-from src.core.target_resolver import build_target_profile
-from src.modules.recon.nmap_wrapper import NmapWrapper
+from src.core.parser import to_report_findings
+from src.utils.dependency_check import run_full_dependency_check, print_dependency_report
+
 from src.reports.generator import ReportData, ReportGenerator
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-def main_nmap_only() -> None:
-    cfg = load_config()
-    target = cfg.nmap.authorized_targets[0]
-    profile = build_target_profile(target)
+def _build_ai_provider(config) -> Optional[OllamaClient | OpenRouterClient]:
+    """Build AI provider from config with validation.
+    
+    Returns:
+        Configured AI provider instance or None if disabled.
+        
+    Raises:
+        ValueError: If selected provider is not properly configured.
+    """
+    if not config.ai.enable:
+        return None
 
-    wrapper = NmapWrapper(config=cfg.nmap.model_dump(), audit_logger=logger)
-    scan = wrapper.scan(target=profile)
+    if config.ai.provider == "ollama":
+        if not config.ai.ollama:
+            raise ValueError("Ollama provider selected but not configured in config")
+        return OllamaClient(
+            base_url=str(config.ai.ollama.base_url),
+            model=config.ai.ollama.model,
+            timeout=config.ai.ollama.timeout,
+        )
 
-    parsed_findings = parse_nmap(scan)
-    enriched_findings = enrich_with_kb(parsed_findings)
-    findings = to_report_findings(enriched_findings)
-    if not findings:
-        findings = [
-            {
-                "title": "No open ports detected",
-                "mitre": "T1595",
-                "description": f"No open ports were parsed for {scan.target}.",
-            }
-        ]
+    if config.ai.provider == "openrouter":
+        if not config.ai.openrouter or not config.ai.openrouter.api_key:
+            raise ValueError("OpenRouter provider selected but not configured in config")
+        return OpenRouterClient(
+            api_key=config.ai.openrouter.api_key.get_secret_value(),
+            model=config.ai.openrouter.model,
+            timeout=config.ai.openrouter.timeout,
+            base_url=str(config.ai.openrouter.base_url),
+        )
 
-    ai_recommendations = []
-    if os.getenv("SHARINGAN_ENABLE_AI", "0") == "1":
-        try:
-            ai = get_ai_provider(cfg.ai.model_dump())
-            prompt = build_recon_analysis_prompt(enriched_findings, target=scan.target)
-            analysis = ai.generate(
-                system_prompt="You are a cybersecurity analyst. Provide safe defensive recommendations only.",
-                user_prompt=prompt,
-            )
-            ai_recommendations.append(
-                {
-                    "finding_summary": "Scan review recommendation",
-                    "mitre_technique": "T1046",
-                    "attack_suggestion": "N/A",
-                    "risk_level": "MEDIUM",
-                    "short_term_fix": "Validate exposed services and close unused ports.",
-                    "long_term_fix": "Enforce baseline hardening and periodic exposure reviews.",
-                    "confidence": 0.6,
-                    "analysis": analysis,
-                }
-            )
-        except Exception as exc:
-            logger.warning("ai_recommendation_skipped: %s", exc)
+    logger.warning("unknown_ai_provider", extra={"provider": config.ai.provider})
+    return None
 
-    report = ReportData(
-        engagement_id=f"ENG-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-        timestamp=datetime.utcnow().isoformat(),
-        target=target,
-        findings=findings,
-        ai_recommendations=ai_recommendations,
-        remediation_plan={
-            "short_term": ["Review open ports and patch exposed services."],
-            "long_term": ["Adopt segmented network policy and continuous scanning."],
-        },
+
+def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments with secure defaults."""
+    parser = argparse.ArgumentParser(
+        prog="sharingan",
+        description="Sharingan - AI-Assisted Red Team Framework",
+        epilog=(
+            "Examples:\n"
+            "  sharingan 10.0.0.5                # Scan authorized target\n"
+            "  sharingan --config                # Use first authorized target from config\n"
+            "  sharingan --check-deps --verbose  # Dependency health check\n"
+            "  sharingan --dry-run --no-ai       # Validate scope & config only\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    
+    parser.add_argument(
+        "target",
+        nargs="?",
+        default=None,
+        help="Target IP, domain, or CIDR to scan"
+    )
+    parser.add_argument(
+        "--config",
+        action="store_true",
+        help="Run in config-driven mode (uses base.yaml authorized targets)"
+    )
+    parser.add_argument(
+        "--check-deps",
+        action="store_true",
+        help="Check system/Python dependencies and exit"
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable DEBUG logging & stack traces"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate config, scope, and deps without executing tools"
+    )
+    parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Disable AI analysis regardless of config setting"
+    )
+    parser.add_argument(
+        "--output", "-o",
+        type=str,
+        default=None,
+        help="Override default report output directory"
+    )
+    
+    return parser.parse_args()
 
-    report_gen = ReportGenerator(output_dir=Path("reports"))
-    json_path, artifact_path = report_gen.generate_full_report(report)
 
-    logger.info("run_complete")
-    logger.info("json_report=%s", json_path)
-    logger.info("report_artifact=%s", artifact_path)
+def main() -> int:
+    """Framework entry point. Returns OS exit code."""
+    args = parse_args()
 
+    # Show banner for regular scan/dry-run invocations.
+    if not args.check_deps:
+        print_banner()
 
-def main_interactive() -> None:
-    """Interactive CLI mode: banner + workflow selection."""
-    print_banner()
-    target = sys.argv[1] if len(sys.argv) >= 2 else None
+    # ──────────────────────────────────────────────────────────────
+    # 1. INITIALIZE LOGGING (Early, before any heavy operations)
+    # ──────────────────────────────────────────────────────────────
+    log_level = "DEBUG" if args.verbose else os.getenv("SHARINGAN_LOG_LEVEL", "INFO")
+    audit_log_path = os.getenv("SHARINGAN_AUDIT_LOG", "data/audit/audit.jsonl")
+    
+    setup_logging(level=log_level, log_file=audit_log_path)
+    logger.info("Sharingan framework starting version=%s", "2.0.0-merged")
 
-    if target is None:
-        target = prompt_target()
+    # ──────────────────────────────────────────────────────────────
+    # 2. DEPENDENCY CHECK MODE
+    # ──────────────────────────────────────────────────────────────
+    if args.check_deps:
+        logger.info("Running dependency health check...")
+        results = run_full_dependency_check()
+        success = print_dependency_report(results, verbose=args.verbose)
+        audit_log(logger, "dependency_check_exit", success=success)
+        return 0 if success else 1
 
+    # ──────────────────────────────────────────────────────────────
+    # 3. LOAD & VALIDATE CONFIGURATION
+    # ──────────────────────────────────────────────────────────────
     try:
-        profile = build_target_profile(target)
-    except ValueError as e:
-        logger.error("Invalid target: %s", e)
-        raise SystemExit(1)
+        config = load_config()
+        logger.info("Configuration loaded & validated successfully")
+    except FileNotFoundError as e:
+        logger.critical(f"Config file missing: {e}")
+        return 2
+    except Exception as e:
+        logger.critical(f"Configuration validation failed: {e}")
+        return 2
 
-    print_profile_summary(profile)
+    # ──────────────────────────────────────────────────────────────
+    # 4. QUICK CRITICAL DEP CHECK (Fail fast before scanning)
+    # ──────────────────────────────────────────────────────────────
+    critical_deps = {
+        k: v for k, v in run_full_dependency_check().items()
+        if k.startswith(("python:yaml", "python:pydantic", "tool:nmap"))
+    }
+    if not all(v.present for v in critical_deps.values()):
+        logger.critical("Critical dependencies missing. Run with --check-deps for details.")
+        return 2
 
-    if len(sys.argv) >= 3 and sys.argv[2] in ["nmap", "orchestrated"]:
-        workflow = sys.argv[2]
-    else:
-        from src.cli import prompt_workflow
-        workflow = prompt_workflow()
+    # ──────────────────────────────────────────────────────────────
+    # 5. RESOLVE TARGET & ENFORCE SCOPE
+    # ──────────────────────────────────────────────────────────────
+    target = args.target
+    
+    if args.config:
+        authorized = get_authorized_targets(config)
+        target = authorized[0] if authorized else None
+        logger.info("Config mode: selected first authorized target target=%s", target)
 
-    if workflow == "nmap":
-        cfg = load_config()
-        wrapper = NmapWrapper(config=cfg.nmap.model_dump(), audit_logger=logger)
-        print_recon_header(profile.input, "nmap")
+    if not target:
+        logger.error("No target specified. Provide an IP/domain or use --config.")
+        return 1
 
-        scan = wrapper.scan(target=profile)
-        parsed_findings = parse_nmap(scan)
-        enriched_findings = enrich_with_kb(parsed_findings)
-        findings = to_report_findings(enriched_findings)
+    # Scope validation (security gate)
+    if config.security.enforce_scope:
+        if not is_target_authorized(target, config):
+            logger.critical(f"🚫 TARGET OUT OF SCOPE: '{target}'")
+            logger.critical("Add target to AUTHORIZED_TARGETS in .env or config/base.yaml")
+            audit_log(logger, "scope_violation_blocked", target=target)
+            return 3
+        logger.info("Target scope validation passed target=%s", target)
 
-        print_step("Nmap", len(enriched_findings), "findings")
+    # ──────────────────────────────────────────────────────────────
+    # 6. DRY RUN (Validation only)
+    # ──────────────────────────────────────────────────────────────
+    if args.dry_run:
+        logger.info("🔍 Dry-run mode: Config, scope, and deps validated. No tools executed.")
+        audit_log(logger, "dry_run_completed", target=target)
+        return 0
 
-    elif workflow == "orchestrated":
-        print_recon_header(profile.input, "orchestrated")
-
-        orch_result = run_full_recon(profile, output_dir="data/processed", save_findings=True)
-        enriched_findings = orch_result["all_findings"]
-        findings = to_report_findings(enriched_findings)
-
-        print_step("Total findings", len(enriched_findings), "items")
-
-        # Optional AI analysis if available
-        ai_available = False
-        if os.getenv("SHARINGAN_ENABLE_AI", "0") == "1":
-            try:
-                cfg = load_config()
-                ai = get_ai_provider(cfg.ai.model_dump())
-                if getattr(ai, "is_available", lambda: True)():
-                    prompt = build_recon_analysis_prompt(enriched_findings, target=profile.input)
-                    ai_analysis = ai.generate(
-                        system_prompt="You are a penetration testing expert. Analyze findings and suggest actionable defensive next steps.",
-                        user_prompt=prompt,
-                    )
-                    print(f"\nAI analysis:\n{ai_analysis}\n")
-                    ai_available = True
-            except Exception as exc:
-                logger.warning("ai_analysis_skipped: %s", exc)
-
-        analysis_result = analyze_and_summarize(enriched_findings, model_name="ollama" if ai_available else None)
-        summary = analysis_result["summary"]
-        if summary:
-            print(f"\n{summary}\n")
-        return
-    else:
-        logger.error("Unknown workflow: %s", workflow)
-        raise SystemExit(1)
-
-    # Generate report for nmap workflow
-    report = ReportData(
-        engagement_id=f"ENG-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-        timestamp=datetime.utcnow().isoformat(),
-        target=profile.input,
-        findings=findings,
-        ai_recommendations=[],
-        remediation_plan={
-            "short_term": ["Review findings and prioritize critical items."],
-            "long_term": ["Implement continuous scanning and monitoring."],
-        },
+    # ──────────────────────────────────────────────────────────────
+    # 7. PREPARE EXECUTION CONTEXT
+    # ──────────────────────────────────────────────────────────────
+    output_dir = Path(args.output) if args.output else config.reports.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    ai_enabled = config.ai.enable and not args.no_ai
+    logger.info(
+        "Execution parameters target=%s ai_enabled=%s output_dir=%s report_formats=%s",
+        target,
+        ai_enabled,
+        output_dir,
+        config.reports.formats,
     )
 
-    report_gen = ReportGenerator(output_dir=Path("reports"))
-    json_path, artifact_path = report_gen.generate_full_report(report)
-    logger.info("reports_generated json=%s artifact=%s", json_path, artifact_path)
+    # ──────────────────────────────────────────────────────────────
+    # 8. EXECUTE WORKFLOW (Recon → Parse → AI → Report)
+    # ──────────────────────────────────────────────────────────────
+    try:
+        logger.info("🚀 Starting reconnaissance workflow...")
+        recon_results = run_full_recon(
+            target=target,
+            output_dir=str(output_dir / "data"),
+            save_findings=True,
+        )
 
+        findings = recon_results.get("all_findings", [])
+        ai_analysis = None
+        if ai_enabled:
+            provider = _build_ai_provider(config)
+            if provider is not None:
+                try:
+                    ai_analysis = provider.generate(
+                        "You are a defensive security analyst. Keep the response concise and avoid exploit instructions.",
+                        build_recon_analysis_prompt(findings, target=target),
+                    )
+                except Exception as exc:
+                    logger.warning("AI analysis unavailable: %s", exc)
 
-def main() -> None:
-    """Auto-detect mode: CLI if no args, config-driven if called from config."""
-    if len(sys.argv) >= 2 and sys.argv[1] == "--config":
-        main_nmap_only()
-    else:
-        main_interactive()
+        analysis_bundle = analyze_and_summarize(
+            findings,
+            model_name=config.ai.provider,
+            ai_analysis=ai_analysis,
+        )
+
+        logger.info("📊 Generating reports...")
+        reporter = ReportGenerator(output_dir=output_dir)
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        report_data = ReportData(
+            engagement_id=f"sharingan-{timestamp.replace(':', '').replace('-', '')}",
+            timestamp=timestamp,
+            target=target,
+            findings=to_report_findings(findings),
+            ai_recommendations=[
+                {
+                    "finding_summary": "Decision engine summary",
+                    "mitre_technique": "N/A",
+                    "risk_level": "informational",
+                    "confidence": 0.0,
+                    "attack_suggestion": analysis_bundle["summary"],
+                }
+            ],
+            remediation_plan={
+                "short_term": [f"Review top findings for {target}"] if findings else ["No findings returned from recon"],
+                "long_term": ["Validate scope controls and report output handling"],
+            },
+        )
+        json_path, pdf_path = reporter.generate_full_report(report_data)
+
+        logger.info(
+            "✅ Scan completed successfully reports=%s",
+            [str(json_path), str(pdf_path)],
+        )
+        audit_log(
+            logger,
+            "scan_completed",
+            target=target,
+            ai_used=ai_enabled,
+            report_formats=["json", "pdf"],
+        )
+        return 0
+
+    except KeyboardInterrupt:
+        logger.warning("⚠️ Scan interrupted by user (Ctrl+C)")
+        audit_log(logger, "scan_interrupted", target=target)
+        return 130
+
+    except Exception as e:
+        logger.critical(f"❌ Workflow execution failed: {e}", exc_info=args.verbose)
+        audit_log(logger, "scan_failed", target=target, error_type=type(e).__name__, error=str(e))
+        return 4
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
