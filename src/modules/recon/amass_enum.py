@@ -1,3 +1,5 @@
+"""Run amass enumeration and return normalized recon output."""
+
 import os
 import subprocess
 

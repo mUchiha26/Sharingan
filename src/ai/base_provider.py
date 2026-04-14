@@ -1,3 +1,5 @@
+"""Define the common interface that all AI providers must implement."""
+
 from abc import ABC, abstractmethod
 
 class BaseAIProvider(ABC):

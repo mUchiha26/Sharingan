@@ -1,3 +1,5 @@
+"""Coordinate end-to-end recon execution, analysis, and report generation."""
+
 """
 Full recon orchestration workflow: target resolution → multi-tool discovery → parsing → analysis → reporting.
 This consolidates the legacy sharingan_issra orchestrator for the modern src structure.
@@ -11,7 +13,14 @@ from typing import Optional
 
 from src.core.attack_decision_engine import analyze as analyze_findings
 from src.core.attack_decision_engine import summarize as summarize_findings
-from src.core.parser import enrich_with_kb, parse_amass, parse_harvester, parse_nmap, save_parsed
+from src.core.parser import (
+    enrich_with_kb,
+    merge_and_deduplicate_findings,
+    parse_amass,
+    parse_harvester,
+    parse_nmap,
+    save_parsed,
+)
 from src.core.target_resolver import TargetProfile, build_target_profile
 from src.modules.recon.amass_enum import run_amass
 from src.modules.recon.harvester import run_harvester
@@ -38,6 +47,9 @@ def run_full_recon(
             - all_findings: all parsed, enriched, deduplicated findings
             - target_profile: resolved TargetProfile
             - raw_results: {amass, nmap, harvester} results before parsing
+
+    Raises:
+        ValueError: If target is not in authorized scope.
     """
     profile = target if isinstance(target, TargetProfile) else build_target_profile(target)
     target_label = profile.input
@@ -61,24 +73,13 @@ def run_full_recon(
         harvester_items=len(parsed_harvester),
     )
 
-    # 3. Merge + deduplicate by value
-    all_findings = parsed_amass + parsed_nmap + parsed_harvester
-    seen, unique_findings = set(), []
-    for finding in all_findings:
-        value = finding.get("value", "")
-        if value and value not in seen:
-            seen.add(value)
-            unique_findings.append(finding)
-
-    if not unique_findings:
-        unique_findings = [
-            {
-                "type": "general",
-                "value": target_label,
-                "category": "general",
-                "target": target_label,
-            }
-        ]
+    # 3. Merge + deduplicate findings
+    unique_findings = merge_and_deduplicate_findings(
+        parsed_amass,
+        parsed_nmap,
+        parsed_harvester,
+        target_label=target_label
+    )
 
     logger.info("findings_deduplicated", total=len(unique_findings))
 

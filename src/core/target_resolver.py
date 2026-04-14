@@ -1,10 +1,15 @@
+"""Resolve and classify user targets into normalized scan profiles."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 import ipaddress
+import logging
 import re
 import socket
 from typing import Iterable
+
+logger = logging.getLogger(__name__)
 
 
 _HOSTNAME_LABEL = re.compile(r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)$")
@@ -85,7 +90,7 @@ def resolve_addresses(hostname: str) -> list[str]:
     addresses: list[str] = []
     try:
         for result in socket.getaddrinfo(hostname, None):
-            address = result[4][0]
+            address = str(result[4][0])
             if address not in addresses:
                 addresses.append(address)
     except socket.gaierror:
@@ -94,6 +99,11 @@ def resolve_addresses(hostname: str) -> list[str]:
 
 
 def build_target_profile(target: str) -> TargetProfile:
+    """Build and validate target profile against authorized scope from config.
+    
+    Raises:
+        ValueError: If target is invalid or out of authorized scope.
+    """
     if not validate_target(target):
         raise ValueError(f"Invalid target: '{target}'")
 
@@ -107,15 +117,35 @@ def build_target_profile(target: str) -> TargetProfile:
             profile.reverse_dns_name = profile.domain
         profile.resolved_ips = [target]
         profile.resolution_success = True
-        return profile
-
-    profile.domain = target
-    profile.resolved_ips = resolve_addresses(target)
-    if profile.resolved_ips:
-        profile.ip = profile.resolved_ips[0]
-        profile.resolution_success = True
     else:
-        profile.resolution_errors.append(f"No A/AAAA records resolved for {target}")
+        profile.domain = target
+        profile.resolved_ips = resolve_addresses(target)
+        if profile.resolved_ips:
+            profile.ip = profile.resolved_ips[0]
+            profile.resolution_success = True
+        else:
+            profile.resolution_errors.append(f"No A/AAAA records resolved for {target}")
+
+    # Validate scope against authorized targets from config
+    try:
+        from src.core.config_loader import load_config
+        cfg = load_config()
+        authorized_targets = cfg.nmap.authorized_targets
+        
+        if authorized_targets and not is_target_in_scope(profile, authorized_targets):
+            logger.error(
+                "Scope violation: target=%s type=%s action=profile_rejected",
+                profile.input,
+                profile.type
+            )
+            raise ValueError(f"Target {profile.input} not in authorized scope")
+        
+        logger.debug("Target scope validated: %s", profile.input)
+    except ValueError:
+        # Re-raise scope violation
+        raise
+    except Exception as e:
+        logger.warning("Scope validation skipped: %s", e)
 
     return profile
 

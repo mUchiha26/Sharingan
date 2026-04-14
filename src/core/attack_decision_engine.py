@@ -1,3 +1,5 @@
+"""Generate attack path recommendations from parsed scan findings."""
+
 from __future__ import annotations
 
 import json

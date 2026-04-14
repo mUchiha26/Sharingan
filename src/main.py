@@ -1,3 +1,5 @@
+"""Start Sharingan in interactive mode or config-driven execution mode."""
+
 """
 Primary entrypoint for Sharingan: supports both direct config-driven scans and interactive CLI mode.
 Can run orchestrated recon (all tools) or focused nmap scans.
@@ -11,8 +13,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from src.ai import get_ai_provider
-from src.ai.ollama_client import OllamaClient
+from src.ai import build_recon_analysis_prompt, get_ai_provider
 from src.cli import print_banner, print_profile_summary, print_recon_header, print_step, prompt_target, prompt_workflow
 from src.core.config_loader import load_config
 from src.core.orchestrator import analyze_and_summarize, run_full_recon
@@ -49,14 +50,10 @@ def main_nmap_only() -> None:
     if os.getenv("SHARINGAN_ENABLE_AI", "0") == "1":
         try:
             ai = get_ai_provider(cfg.ai.model_dump())
+            prompt = build_recon_analysis_prompt(enriched_findings, target=scan.target)
             analysis = ai.generate(
-                system_prompt=(
-                    "You are a cybersecurity analyst. Provide safe defensive recommendations only."
-                ),
-                user_prompt=(
-                    "Review this scan summary and return one concise recommendation:\n"
-                    f"target={scan.target}\nopen_ports={scan.open_ports}"
-                ),
+                system_prompt="You are a cybersecurity analyst. Provide safe defensive recommendations only.",
+                user_prompt=prompt,
             )
             ai_recommendations.append(
                 {
@@ -138,26 +135,18 @@ def main_interactive() -> None:
 
         # Optional AI analysis if available
         ai_available = False
-        ai_analysis = None
         if os.getenv("SHARINGAN_ENABLE_AI", "0") == "1":
             try:
                 cfg = load_config()
-                if cfg.ai.provider == "ollama":
-                    ollama = OllamaClient(
-                        base_url=cfg.ai.base_url,
-                        model=cfg.ai.model,
-                        timeout=cfg.ai.timeout,
+                ai = get_ai_provider(cfg.ai.model_dump())
+                if getattr(ai, "is_available", lambda: True)():
+                    prompt = build_recon_analysis_prompt(enriched_findings, target=profile.input)
+                    ai_analysis = ai.generate(
+                        system_prompt="You are a penetration testing expert. Analyze findings and suggest actionable defensive next steps.",
+                        user_prompt=prompt,
                     )
-                    if ollama.is_available():
-                        prompt = ollama.build_recon_prompt(enriched_findings)
-                        ai_analysis = ollama.generate(
-                            system_prompt=(
-                                "You are a penetration testing expert. "
-                                "Analyze findings and suggest actionable attack paths."
-                            ),
-                            user_prompt=prompt,
-                        )
-                        ai_available = True
+                    print(f"\nAI analysis:\n{ai_analysis}\n")
+                    ai_available = True
             except Exception as exc:
                 logger.warning("ai_analysis_skipped: %s", exc)
 

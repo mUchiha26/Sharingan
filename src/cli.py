@@ -1,3 +1,5 @@
+"""Provide an interactive CLI for selecting targets and scan workflows."""
+
 """
 Interactive CLI mode for Sharingan with banner, target prompts, and workflow selection.
 This consolidates logic from the legacy sharingan_issra/main.py for the modern src structure.

@@ -1,3 +1,5 @@
+"""Define the base interface for executable scanning modules."""
+
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 

@@ -1,3 +1,5 @@
+"""Test target normalization and profile inference for scan inputs."""
+
 import socket
 
 import pytest

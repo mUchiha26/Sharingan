@@ -1,3 +1,5 @@
+"""Execute subprocess commands with consistent logging and error handling."""
+
 import subprocess
 import logging
 from typing import Dict, Any

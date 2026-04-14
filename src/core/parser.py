@@ -1,3 +1,5 @@
+"""Parse tool outputs and enrich findings with attack knowledge data."""
+
 from __future__ import annotations
 
 import json
@@ -118,6 +120,46 @@ def save_parsed(data: list[dict[str, Any]], filename: str, output_dir: str = "da
 
 def enrich_with_kb(findings: list[dict[str, Any]], kb_path: Path = _DEFAULT_KB_PATH) -> list[dict[str, Any]]:
     return prioritize_findings(findings, kb_path)
+
+
+def merge_and_deduplicate_findings(
+    *parsed_finding_lists: list[dict[str, Any]],
+    target_label: str = "unknown"
+) -> list[dict[str, Any]]:
+    """Merge multiple parsed finding lists and deduplicate by value.
+    
+    Args:
+        *parsed_finding_lists: Variable number of parsed finding lists (e.g., from amass, nmap, harvester).
+        target_label: Target identifier for fallback finding if result is empty.
+    
+    Returns:
+        Deduplicated list of findings, or fallback finding if empty.
+    """
+    # Merge all findings
+    all_findings = []
+    for findings in parsed_finding_lists:
+        all_findings.extend(findings)
+    
+    # Deduplicate by value
+    seen, unique_findings = set(), []
+    for finding in all_findings:
+        value = finding.get("value", "")
+        if value and value not in seen:
+            seen.add(value)
+            unique_findings.append(finding)
+    
+    # Return fallback finding if no unique findings
+    if not unique_findings:
+        unique_findings = [
+            {
+                "type": "general",
+                "value": target_label,
+                "category": "general",
+                "target": target_label,
+            }
+        ]
+    
+    return unique_findings
 
 
 def to_report_findings(enriched_findings: list[dict[str, Any]]) -> list[dict[str, Any]]:

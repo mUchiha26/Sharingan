@@ -1,3 +1,5 @@
+"""Wrap nmap execution with config-driven validation and result parsing."""
+
 # src/modules/recon/nmap_wrapper.py
 """
 Nmap Wrapper Module - MVP v0.2

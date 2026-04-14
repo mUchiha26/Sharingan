@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Run a scan workflow from CLI arguments and project configuration."""
+
 import argparse
 import logging
 import os

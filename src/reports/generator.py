@@ -1,3 +1,5 @@
+"""Generate structured JSON and PDF reports from scan findings."""
+
 # src/reports/generator.py
 """
 Report Generator: JSON (machine-readable) + PDF (human-readable)

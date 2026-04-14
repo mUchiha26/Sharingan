@@ -1,3 +1,5 @@
+"""Test nmap wrapper validation, command building, and parsing flows."""
+
 # src/modules/recon/test_nmap_wrapper.py
 import pytest
 import structlog

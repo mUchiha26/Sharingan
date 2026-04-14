@@ -1,3 +1,5 @@
+"""Test YAML configuration loading and schema validation behavior."""
+
 def test_config_validation_pydantic():
     """Ensure base.yaml loads with strict validation"""
     from src.core.config_loader import AppConfig

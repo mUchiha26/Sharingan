@@ -1,3 +1,5 @@
+"""Load and validate application configuration from YAML files."""
+
 from pydantic import BaseModel, Field
 import yaml
 from pathlib import Path

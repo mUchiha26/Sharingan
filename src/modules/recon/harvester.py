@@ -1,3 +1,5 @@
+"""Run theHarvester discovery and normalize discovered recon artifacts."""
+
 import os
 import json
 import subprocess

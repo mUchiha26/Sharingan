@@ -1,3 +1,5 @@
+"""Execute nmap scans against resolved targets and collect raw output."""
+
 import subprocess
 import os
 import re

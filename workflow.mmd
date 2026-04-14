@@ -1,0 +1,49 @@
+mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectiveness<br/>and features
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+            Argument mapping
+    Tools
+      Pen and paper
+      Mermaidgraph TD
+    A[Start: main.py Entry Point] --> B[Load Configuration<br/>config/settings.yaml]
+    B --> C[Build Target Profile<br/>TargetResolver]
+    C --> D{Scope Validation?}
+    D -->|Valid| E[Execute Recon Modules]
+    D -->|Invalid| Z[Log & Abort]
+    
+    E --> E1[Nmap Scan<br/>nmap_wrapper.py]
+    E --> E2[Amass Enumeration<br/>amass_wrapper.py]
+    E --> E3[theHarvester<br/>harvester.py]
+    E --> E4[Shodan Lookup<br/>shodan_lookup.py]
+    
+    E1 & E2 & E3 & E4 --> F[Parse Raw Outputs<br/>parser.py]
+    F --> G[Merge & Deduplicate Findings]
+    G --> H[Enrich with Knowledge Base<br/>MITRE ATT&CK mapping]
+    
+    H --> I{AI Enabled?}
+    I -->|Yes| J[AI Analysis Layer]
+    I -->|No| K[Generate Report]
+    
+    J --> J1[Local AI: Ollama/Qwen<br/>ollama_client.py]
+    J --> J2[Cloud AI: OpenAI/OpenRouter<br/>openai_client.py]
+    J1 & J2 --> J3[Decision Engine<br/>attack_decision_engine.py]
+    J3 --> J4[Generate Attack Suggestions<br/>+ Guardrails Validation]
+    
+    J4 --> K[Report Generation<br/>report_generator.py]
+    K --> L[Output: JSON/PDF Reports<br/>+ Audit Logs]
+    
+    style A fill:#e1f5fe
+    style D fill:#fff3e0
+    style I fill:#fff3e0
+    style J3 fill:#f3e5f5
+    style L fill:#e8f5e9

@@ -1,3 +1,5 @@
+"""Test wireless aircrack wrapper command construction and execution paths."""
+
 import pytest
 from unittest.mock import patch, MagicMock
 from src.modules.wireless.aircrack_wrapper import AircrackWrapper

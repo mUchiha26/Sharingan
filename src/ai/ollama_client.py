@@ -1,3 +1,5 @@
+"""Implement AI provider calls through an Ollama-compatible OpenAI client."""
+
 from typing import Any
 
 from openai import OpenAI

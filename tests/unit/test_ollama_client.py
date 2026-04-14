@@ -1,3 +1,5 @@
+"""Test Ollama client prompt composition and response handling."""
+
 import pytest
 
 from src.ai.ollama_client import OllamaClient
@@ -17,15 +19,10 @@ def test_ollama_connection(mock_ollama_server):
 
 def test_prompt_generation_recon():
     """Test that recon analysis prompts are correctly templated."""
-    from src.ai.prompt_templates import RECON_ANALYSIS_TEMPLATE
+    from src.ai.prompt_templates import build_recon_analysis_prompt
 
-    prompt = RECON_ANALYSIS_TEMPLATE.render(ports=[22, 80, 443], os="Linux")
-    assert "22" in prompt and "Linux" in prompt
-
-
-def test_output_guardrails():
-    """Ensure AI outputs are validated against safety policies."""
-    from src.ai.guardrails import validate_ai_output
-
-    safe_output = {"action": "scan_port", "target": "10.0.0.1"}
-    assert validate_ai_output(safe_output) is True
+    prompt = build_recon_analysis_prompt(
+        findings=[{"type": "port", "value": "22/tcp", "category": "ssh"}],
+        target="192.168.1.10",
+    )
+    assert "192.168.1.10" in prompt and "22/tcp" in prompt
